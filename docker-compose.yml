@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  coverage-api:
+    build: .
+    container_name: coverage-api-container
+    ports:
+      - "3500:3000"
+    restart: unless-stopped
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DB_HOST=host.docker.internal

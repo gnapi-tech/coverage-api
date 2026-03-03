@@ -1,7 +1,7 @@
 -- Seed data for code_coverage tables
 
 -- Insert Projects (using consistent UUIDs for referential integrity)
-INSERT INTO code_coverage.projects (projectid, projectname, ingestiontoken)
+INSERT INTO code_coverage.project_ingestion (projectid, projectname, ingestiontoken)
 VALUES
     ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Authentication Service', 'token-auth-svc-123'),
     ('b1f1c1a1-9c0b-4ef8-bb6d-6bb9bd380a22', 'Payment Gateway', 'token-payment-gw-456')

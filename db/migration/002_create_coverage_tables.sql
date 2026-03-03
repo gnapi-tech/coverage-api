@@ -6,15 +6,17 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE code_coverage.artifact_type AS ENUM('junit', 'lcov', 'other');
+    CREATE TYPE code_coverage.artifact_type AS ENUM('junit', 'lcov', 'other', 'coverage-summary');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
+ALTER TYPE code_coverage.artifact_type ADD VALUE IF NOT EXISTS 'coverage-summary';
+
 -- Table ingest_api_keys
 CREATE TABLE IF NOT EXISTS code_coverage.ingest_api_keys (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id UUID NOT NULL REFERENCES code_coverage.projects(projectid) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES code_coverage.project_ingestion(projectid) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL, -- Key display name, e.g. GitHub Action Key
     key_hash VARCHAR(255) NOT NULL, -- Hashed API key, never store raw key
     expires_at TIMESTAMP,
@@ -30,7 +32,7 @@ CREATE INDEX IF NOT EXISTS idx_ingest_api_keys_project_id ON code_coverage.inges
 -- Table unit_test_run
 CREATE TABLE IF NOT EXISTS code_coverage.unit_test_run (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id UUID NOT NULL REFERENCES code_coverage.projects(projectid) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES code_coverage.project_ingestion(projectid) ON DELETE CASCADE,
     repo VARCHAR(255) NOT NULL,
     branch VARCHAR(255) NOT NULL,
     commit_sha VARCHAR(64) NOT NULL,

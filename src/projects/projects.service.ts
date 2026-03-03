@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { CreateTestRunDto } from './dto/create-test-run.dto';
 import { InjectConnection } from 'nest-knexjs';
 import { Knex } from 'knex';
 import {
@@ -18,7 +19,9 @@ export class ProjectsService {
 
   /*--------------------Create Project-----------------------*/
   async create(createProjectDto: CreateProjectDto) {
-    const [project] = await this.knex<Project>('code_coverage.projects')
+    const [project] = await this.knex<Project>(
+      'code_coverage.project_ingestion',
+    )
       .insert({
         projectname: createProjectDto.projectname,
         ingestiontoken: createProjectDto.ingestiontoken,
@@ -29,12 +32,12 @@ export class ProjectsService {
 
   /*--------------------Get All Project-----------------------*/
   async findAll() {
-    return this.knex<Project>('code_coverage.projects').select('*');
+    return this.knex<Project>('code_coverage.project_ingestion').select('*');
   }
 
   /*--------------------Get One Project-----------------------*/
   async findOne(id: string) {
-    const project = await this.knex<Project>('code_coverage.projects')
+    const project = await this.knex<Project>('code_coverage.project_ingestion')
       .where({ projectid: id })
       .first();
     if (!project) {
@@ -45,7 +48,9 @@ export class ProjectsService {
 
   /*--------------------Update Project-----------------------*/
   async update(id: string, updateProjectDto: UpdateProjectDto) {
-    const [project] = await this.knex<Project>('code_coverage.projects')
+    const [project] = await this.knex<Project>(
+      'code_coverage.project_ingestion',
+    )
       .where({ projectid: id })
       .update(updateProjectDto)
       .returning('*');
@@ -57,7 +62,7 @@ export class ProjectsService {
 
   /*--------------------Delete Project-----------------------*/
   async remove(id: string) {
-    const count = await this.knex<Project>('code_coverage.projects')
+    const count = await this.knex<Project>('code_coverage.project_ingestion')
       .where({ projectid: id })
       .delete();
     if (count === 0) {
@@ -109,5 +114,65 @@ export class ProjectsService {
     }
 
     return testRuns;
+  }
+
+  /*--------------------Create Project Test Run-----------------------*/
+  async createTestRun(id: string, createTestRunDto: CreateTestRunDto) {
+    const { test_cases, coverage_files, artifacts, ...runData } =
+      createTestRunDto;
+
+    return this.knex.transaction(async (trx) => {
+      // 1. Insert core test run data
+      const [testRun] = await trx<TestRun>('code_coverage.unit_test_run')
+        .insert({
+          ...runData,
+          project_id: id,
+        })
+        .returning('*');
+
+      // 2. Insert test cases if any exist
+      if (test_cases && test_cases.length > 0) {
+        const casesToInsert = test_cases.map((tc) => ({
+          ...tc,
+          run_id: testRun.id,
+        }));
+        const insertedTestCases = await trx<TestCase>(
+          'code_coverage.unit_test_cases_run',
+        )
+          .insert(casesToInsert)
+          .returning('*');
+        testRun.test_cases = insertedTestCases;
+      }
+
+      // 3. Insert coverage files if any exist
+      if (coverage_files && coverage_files.length > 0) {
+        const filesToInsert = coverage_files.map((cf) => ({
+          ...cf,
+          run_id: testRun.id,
+        }));
+        const insertedCoverageFiles = await trx<CoverageFile>(
+          'code_coverage.coverage_files',
+        )
+          .insert(filesToInsert)
+          .returning('*');
+        testRun.coverage_files = insertedCoverageFiles;
+      }
+
+      // 4. Insert artifacts if any exist
+      if (artifacts && artifacts.length > 0) {
+        const artifactsToInsert = artifacts.map((artifact) => ({
+          ...artifact,
+          run_id: testRun.id,
+        }));
+        const insertedArtifacts = await trx<Artifact>(
+          'code_coverage.unit_test_ingest_artifacts',
+        )
+          .insert(artifactsToInsert)
+          .returning('*');
+        testRun.artifacts = insertedArtifacts;
+      }
+
+      return testRun;
+    });
   }
 }
