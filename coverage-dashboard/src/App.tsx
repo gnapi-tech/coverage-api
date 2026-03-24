@@ -300,7 +300,28 @@ export default function App() {
               color: 'var(--text-secondary)',
             }}
           >
-            <GitHubIcon width={24} height={24} /> {latestRun.repo ?? 'unknown'}
+            <GitHubIcon width={24} height={24} />
+            {latestRun?.repo ? (
+              <a
+                href={`https://github.com/${latestRun.repo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: 'var(--text-secondary)',
+                  textDecoration: 'none',
+                }}
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.textDecoration = 'underline')
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.textDecoration = 'none')
+                }
+              >
+                {latestRun.repo}
+              </a>
+            ) : (
+              'unknown'
+            )}
           </p>
         </div>
       </header>
@@ -471,7 +492,25 @@ export default function App() {
                             gap: '0.5rem',
                           }}
                         >
-                          <GitBranchIcon width={20} height={20} /> {run.branch}
+                          <GitBranchIcon width={20} height={20} />
+                          <a
+                            href={`https://github.com/${run.repo}/tree/${run.branch}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: 'var(--text-primary)',
+                              textDecoration: 'none',
+                            }}
+                            onMouseOver={(e) =>
+                              (e.currentTarget.style.textDecoration =
+                                'underline')
+                            }
+                            onMouseOut={(e) =>
+                              (e.currentTarget.style.textDecoration = 'none')
+                            }
+                          >
+                            {run.branch}
+                          </a>
                           {run.pr_number && ` (#${run.pr_number})`}
                         </span>
                       </td>
@@ -482,7 +521,23 @@ export default function App() {
                         }}
                       >
                         <GitCommitLineIcon style={{ color: '#8b949e' }} />
-                        {run.commit_sha.substring(0, 7)}
+                        <a
+                          href={`https://github.com/${run.repo}/commit/${run.commit_sha}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: 'var(--accent-primary)',
+                            textDecoration: 'none',
+                          }}
+                          onMouseOver={(e) =>
+                            (e.currentTarget.style.textDecoration = 'underline')
+                          }
+                          onMouseOut={(e) =>
+                            (e.currentTarget.style.textDecoration = 'none')
+                          }
+                        >
+                          {run.commit_sha.substring(0, 7)}
+                        </a>
                       </td>
                       <td>{new Date(run.created_at).toLocaleString()}</td>
                       <td>
