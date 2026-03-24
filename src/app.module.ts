@@ -4,6 +4,7 @@ import { KnexModule } from 'nest-knexjs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ProjectsModule } from './projects/projects.module';
+import { IngestModule } from './ingest/ingest.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ProjectsModule } from './projects/projects.module';
       inject: [ConfigService],
     }),
     ProjectsModule,
+    IngestModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import {
   CanActivate,
   ExecutionContext,
@@ -26,9 +27,12 @@ export class ProjectAuthGuard implements CanActivate {
       throw new UnauthorizedException('Authentication token is required');
     }
 
-    // According to projects: we look up the project by the token.
+    // Hash the incoming token using SHA-256 to match the stored hash in the database
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Look up the project by the hashed token.
     const project = await this.knex<Project>('code_coverage.project_ingestion')
-      .where({ ingestiontoken: token })
+      .where({ ingestiontoken: hashedToken })
       .first();
 
     if (!project) {
