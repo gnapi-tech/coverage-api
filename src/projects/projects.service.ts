@@ -36,7 +36,20 @@ export class ProjectsService {
 
   /*--------------------Get All Project-----------------------*/
   async findAll() {
-    return this.knex<Project>('code_coverage.project_ingestion').select('*');
+    // Left join with a subquery to get the latest repo from unit_test_run per project
+    return this.knex
+      .select(
+        'p.projectid',
+        'p.projectname',
+        this.knex.raw('MAX(u.repo) as repo'),
+      )
+      .from('code_coverage.project_ingestion as p')
+      .leftJoin(
+        'code_coverage.unit_test_run as u',
+        'p.projectid',
+        'u.project_id',
+      )
+      .groupBy('p.projectid', 'p.projectname');
   }
 
   /*--------------------Get One Project-----------------------*/
