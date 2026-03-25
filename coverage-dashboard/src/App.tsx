@@ -256,11 +256,19 @@ export default function App() {
     );
   }
 
-  // Stats Calculations for Dashboard Display
+  // Stats Calculations for Dashboard Display (Overall across all runs)
   const latestRun = testRuns[0];
-  const coverageDataLatest = latestRun
-    ? parseFloat(latestRun.coverage_percent)
-    : 0;
+  const coverageDataLatest =
+    testRuns.length > 0
+      ? testRuns.reduce(
+          (sum, run) => sum + parseFloat(run.coverage_percent),
+          0,
+        ) / testRuns.length
+      : 0;
+
+  const totalTests = testRuns.reduce((sum, run) => sum + run.total, 0);
+  const totalPassed = testRuns.reduce((sum, run) => sum + run.passed, 0);
+  const totalFailed = testRuns.reduce((sum, run) => sum + run.failed, 0);
 
   // Format for Recharts
   const chartData = [...testRuns].reverse().map((run) => ({
@@ -358,18 +366,18 @@ export default function App() {
             </div>
             <div className="glass-card">
               <div className="stat-label">Total Tests</div>
-              <div className="stat-value">{latestRun.total}</div>
+              <div className="stat-value">{totalTests}</div>
             </div>
             <div className="glass-card">
               <div className="stat-label">Passed</div>
               <div className="stat-value" style={{ color: 'var(--success)' }}>
-                {latestRun.passed}
+                {totalPassed}
               </div>
             </div>
             <div className="glass-card">
               <div className="stat-label">Failed</div>
               <div className="stat-value" style={{ color: 'var(--danger)' }}>
-                {latestRun.failed}
+                {totalFailed}
               </div>
             </div>
           </div>

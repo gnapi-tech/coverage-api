@@ -1,22 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --bg-primary: #0a0a0c;
-  --bg-secondary: #141419;
-  --bg-glass: rgba(20, 20, 25, 0.6);
-  --border-glass: rgba(255, 255, 255, 0.05);
+  --bg-primary: #fcfcfd;
+  --bg-secondary: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --border-glass: rgba(156, 39, 176, 0.15); /* #9C27B0 used as divider */
+  --divider-solid: #9c27b0;
   
-  --accent-primary: #6366f1;
+  --accent-primary: #2d82f5;
   --accent-secondary: #8b5cf6;
   --accent-gradient: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
   
-  --text-primary: #ffffff;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
   
-  --success: #10b981;
-  --danger: #ef4444;
-  --warning: #f59e0b;
+  /* Colors from screenshot */
+  --success: #12b737;
+  --danger: #ef4545;
+  --warning: #ff9800;
 }
 
 * {
@@ -32,8 +34,8 @@ body {
   line-height: 1.5;
   min-height: 100vh;
   background-image: 
-    radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+    radial-gradient(circle at 15% 50%, rgba(45, 130, 245, 0.04), transparent 30%),
+    radial-gradient(circle at 85% 30%, rgba(200, 100, 246, 0.04), transparent 30%);
 }
 
 .app-container {
@@ -52,9 +54,7 @@ body {
 .header-title {
   font-size: 2.5rem;
   font-weight: 700;
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #45474C;
   letter-spacing: -0.025em;
 }
 
@@ -62,16 +62,16 @@ body {
 .glass-card {
   background: var(--bg-glass);
   backdrop-filter: blur(12px);
-  border: 1px solid var(--border-glass);
-  border-radius: 16px;
+  border: 2.5px solid var(--border-glass);
+  border-radius: 16px; /* the screenshot uses squarer corners than 16px */
   padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 10px rgba(0, 0, 0, 0.01); */
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .glass-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06), 0 0 15px rgba(0, 0, 0, 0.02);
 }
 
 .grid-cols-2 {
@@ -169,21 +169,23 @@ body {
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
+  border: 1px solid transparent;
+  background: #ffffff;
 }
 
 .badge-success {
-  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--success);
   color: var(--success);
 }
 
 .badge-warning {
-  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--warning);
   color: var(--warning);
 }
 
 .badge-danger {
-  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger);
   color: var(--danger);
 }
 
