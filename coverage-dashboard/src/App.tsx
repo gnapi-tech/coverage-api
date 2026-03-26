@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -14,7 +14,6 @@ import {
 import {
   ShieldCheck,
   Server,
-  KeyRound,
   ArrowLeft,
   CheckCircle2,
   XCircle,
@@ -49,8 +48,6 @@ interface TestRun {
 export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [inTokenView, setInTokenView] = useState(false);
-  const [tokenInput, setTokenInput] = useState('');
 
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,30 +69,12 @@ export default function App() {
 
   const handleSelectProject = (project: Project) => {
     setSelectedProject(project);
-    setInTokenView(true);
-    setTokenInput('');
-    setError('');
-  };
-
-  console.log('selectedProject', selectedProject);
-  const handleFetchRuns = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tokenInput) {
-      setError('Please enter your project ingestion token');
-      return;
-    }
     setLoading(true);
     setError('');
 
-    fetch(`/api/projects/${selectedProject?.projectid}/test-runs`, {
-      headers: {
-        Authorization: `Bearer ${tokenInput}`,
-      },
-    })
+    fetch(`/api/projects/${project.projectid}/test-runs`)
       .then(async (res) => {
         if (!res.ok) {
-          if (res.status === 401)
-            throw new Error('Invalid token. Access Unauthorized.');
           const err = await res.json();
           throw new Error(err.message || 'Error fetching test runs');
         }
@@ -104,7 +83,6 @@ export default function App() {
       .then((data) => {
         // Sort descending by created_at natively from DB or here
         setTestRuns(data);
-        setInTokenView(false);
         setLoading(false);
       })
       .catch((err) => {
@@ -114,13 +92,8 @@ export default function App() {
   };
 
   const goBack = () => {
-    if (!inTokenView && selectedProject) {
-      setInTokenView(true);
-      setTestRuns([]);
-    } else {
-      setSelectedProject(null);
-      setInTokenView(false);
-    }
+    setSelectedProject(null);
+    setTestRuns([]);
     setError('');
   };
 
@@ -187,70 +160,6 @@ export default function App() {
               No projects found. Add one in Katalyst main dashboard.
             </p>
           )}
-        </div>
-      </div>
-    );
-  }
-
-  // View 2: Enter Token Guard
-  if (inTokenView) {
-    return (
-      <div className="app-container">
-        <button
-          onClick={goBack}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            marginBottom: '2rem',
-          }}
-        >
-          <ArrowLeft size={20} /> Back to Projects
-        </button>
-
-        <div className="auth-container glass-card">
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <KeyRound
-              size={48}
-              color="var(--accent-primary)"
-              style={{ marginBottom: '1rem' }}
-            />
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-              Access Project
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-              {selectedProject.projectname}
-            </p>
-          </div>
-
-          <form onSubmit={handleFetchRuns}>
-            <input
-              type="password"
-              className="input-field"
-              placeholder="Enter original Ingestion Token"
-              value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
-            />
-            {error && (
-              <p
-                style={{
-                  color: 'var(--danger)',
-                  fontSize: '0.875rem',
-                  marginBottom: '1rem',
-                }}
-              >
-                {error}
-              </p>
-            )}
-
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Verifying...' : 'View Coverage'}
-            </button>
-          </form>
         </div>
       </div>
     );

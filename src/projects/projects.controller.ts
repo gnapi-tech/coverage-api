@@ -38,7 +38,7 @@ export class ProjectsController {
   }
 
   /*--------------------Get Project Test Runs-----------------------*/
-  @UseGuards(ProjectAuthGuard)
+  // @UseGuards(ProjectAuthGuard)
   @Get(':id/test-runs')
   getTestRuns(@Param('id') id: string) {
     return this.projectsService.getTestRuns(id);
