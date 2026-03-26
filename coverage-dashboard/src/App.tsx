@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -14,7 +14,6 @@ import {
 import {
   ShieldCheck,
   Server,
-  KeyRound,
   ArrowLeft,
   CheckCircle2,
   XCircle,
@@ -49,12 +48,13 @@ interface TestRun {
 export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [inTokenView, setInTokenView] = useState(false);
-  const [tokenInput, setTokenInput] = useState('');
 
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
 
   // 1. Fetch Projects on initial load
   useEffect(() => {
@@ -72,30 +72,13 @@ export default function App() {
 
   const handleSelectProject = (project: Project) => {
     setSelectedProject(project);
-    setInTokenView(true);
-    setTokenInput('');
-    setError('');
-  };
-
-  console.log('selectedProject', selectedProject);
-  const handleFetchRuns = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tokenInput) {
-      setError('Please enter your project ingestion token');
-      return;
-    }
+    setCurrentPage(1);
     setLoading(true);
     setError('');
 
-    fetch(`/api/projects/${selectedProject?.projectid}/test-runs`, {
-      headers: {
-        Authorization: `Bearer ${tokenInput}`,
-      },
-    })
+    fetch(`/api/projects/${project.projectid}/test-runs`)
       .then(async (res) => {
         if (!res.ok) {
-          if (res.status === 401)
-            throw new Error('Invalid token. Access Unauthorized.');
           const err = await res.json();
           throw new Error(err.message || 'Error fetching test runs');
         }
@@ -104,7 +87,6 @@ export default function App() {
       .then((data) => {
         // Sort descending by created_at natively from DB or here
         setTestRuns(data);
-        setInTokenView(false);
         setLoading(false);
       })
       .catch((err) => {
@@ -114,13 +96,9 @@ export default function App() {
   };
 
   const goBack = () => {
-    if (!inTokenView && selectedProject) {
-      setInTokenView(true);
-      setTestRuns([]);
-    } else {
-      setSelectedProject(null);
-      setInTokenView(false);
-    }
+    setSelectedProject(null);
+    setTestRuns([]);
+    setCurrentPage(1);
     setError('');
   };
 
@@ -192,70 +170,6 @@ export default function App() {
     );
   }
 
-  // View 2: Enter Token Guard
-  if (inTokenView) {
-    return (
-      <div className="app-container">
-        <button
-          onClick={goBack}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            marginBottom: '2rem',
-          }}
-        >
-          <ArrowLeft size={20} /> Back to Projects
-        </button>
-
-        <div className="auth-container glass-card">
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <KeyRound
-              size={48}
-              color="var(--accent-primary)"
-              style={{ marginBottom: '1rem' }}
-            />
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-              Access Project
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-              {selectedProject.projectname}
-            </p>
-          </div>
-
-          <form onSubmit={handleFetchRuns}>
-            <input
-              type="password"
-              className="input-field"
-              placeholder="Enter original Ingestion Token"
-              value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
-            />
-            {error && (
-              <p
-                style={{
-                  color: 'var(--danger)',
-                  fontSize: '0.875rem',
-                  marginBottom: '1rem',
-                }}
-              >
-                {error}
-              </p>
-            )}
-
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Verifying...' : 'View Coverage'}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
   // Stats Calculations for Dashboard Display (Overall across all runs)
   const latestRun = testRuns[0];
   const coverageDataLatest =
@@ -278,6 +192,13 @@ export default function App() {
     skipped: run.skipped,
     coverage: parseFloat(run.coverage_percent),
   }));
+
+  // Pagination logic
+  const totalPages = Math.max(1, Math.ceil(testRuns.length / rowsPerPage));
+  const paginatedRuns = testRuns.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage,
+  );
 
   // View 3: Project Dashboard
   return (
@@ -490,7 +411,7 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {testRuns.map((run) => (
+                  {paginatedRuns.map((run) => (
                     <tr key={run.id}>
                       <td style={{ fontWeight: 500 }}>
                         <span
@@ -611,6 +532,63 @@ export default function App() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '1.5rem',
+                  padding: '0 0.5rem',
+                }}
+              >
+                <button
+                  className="btn-pagination"
+                  style={{
+                    width: 'auto',
+                    padding: '0.5rem 1rem',
+                    opacity: currentPage === 1 ? 0.5 : 1,
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+                <span
+                  style={{
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  Page{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>
+                    {currentPage}
+                  </strong>{' '}
+                  of {totalPages}
+                </span>
+                <button
+                  className="btn-pagination"
+                  style={{
+                    width: 'auto',
+                    padding: '0.5rem 1rem',
+                    opacity: currentPage === totalPages ? 0.5 : 1,
+                    cursor:
+                      currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}
