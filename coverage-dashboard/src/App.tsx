@@ -53,6 +53,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
   // 1. Fetch Projects on initial load
   useEffect(() => {
     fetch('/api/projects')
@@ -69,6 +72,7 @@ export default function App() {
 
   const handleSelectProject = (project: Project) => {
     setSelectedProject(project);
+    setCurrentPage(1);
     setLoading(true);
     setError('');
 
@@ -94,6 +98,7 @@ export default function App() {
   const goBack = () => {
     setSelectedProject(null);
     setTestRuns([]);
+    setCurrentPage(1);
     setError('');
   };
 
@@ -187,6 +192,13 @@ export default function App() {
     skipped: run.skipped,
     coverage: parseFloat(run.coverage_percent),
   }));
+
+  // Pagination logic
+  const totalPages = Math.max(1, Math.ceil(testRuns.length / rowsPerPage));
+  const paginatedRuns = testRuns.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage,
+  );
 
   // View 3: Project Dashboard
   return (
@@ -399,7 +411,7 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {testRuns.map((run) => (
+                  {paginatedRuns.map((run) => (
                     <tr key={run.id}>
                       <td style={{ fontWeight: 500 }}>
                         <span
@@ -520,6 +532,63 @@ export default function App() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '1.5rem',
+                  padding: '0 0.5rem',
+                }}
+              >
+                <button
+                  className="btn-pagination"
+                  style={{
+                    width: 'auto',
+                    padding: '0.5rem 1rem',
+                    opacity: currentPage === 1 ? 0.5 : 1,
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+                <span
+                  style={{
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  Page{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>
+                    {currentPage}
+                  </strong>{' '}
+                  of {totalPages}
+                </span>
+                <button
+                  className="btn-pagination"
+                  style={{
+                    width: 'auto',
+                    padding: '0.5rem 1rem',
+                    opacity: currentPage === totalPages ? 0.5 : 1,
+                    cursor:
+                      currentPage === totalPages ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}
