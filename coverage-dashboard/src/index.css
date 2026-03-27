@@ -4,8 +4,8 @@
   --bg-primary: #fcfcfd;
   --bg-secondary: #ffffff;
   --bg-glass: rgba(255, 255, 255, 0.85);
-  --border-glass: rgba(156, 39, 176, 0.15); /* #9C27B0 used as divider */
-  --divider-solid: #9c27b0;
+  --border-glass: rgba(156, 39, 176, 0.15);
+  --divider-solid: #9C27B0;
   
   --accent-primary: #2d82f5;
   --accent-secondary: #8b5cf6;
@@ -95,7 +95,7 @@ body {
 }
 
 .stat-label {
-  color: var(--text-secondary);
+  color: #45474C;
   font-size: 0.875rem;
   font-weight: 500;
   text-transform: uppercase;
@@ -168,7 +168,7 @@ body {
 
 .data-table th {
   padding: 1rem;
-  color: var(--text-secondary);
+  color: #45474C;
   font-weight: 500;
   border-bottom: 1px solid var(--border-glass);
 }
@@ -227,7 +227,7 @@ body {
 
 .loader {
   border: 3px solid var(--bg-secondary);
-  border-top: 3px solid var(--accent-primary);
+  border-top: 3px solid #9C27B0;
   border-radius: 50%;
   width: 40px;
   height: 40px;
