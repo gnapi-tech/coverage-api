@@ -14,7 +14,6 @@ import {
 import {
   ShieldCheck,
   Server,
-  ArrowLeft,
   CheckCircle2,
   XCircle,
   MinusCircle,
@@ -46,6 +45,12 @@ interface TestRun {
 }
 
 export default function App() {
+  // Detect if we are embedded via iframe at /project/:projectId
+  const urlProjectId = (() => {
+    const match = window.location.pathname.match(/^\/project\/([^/]+)/);
+    return match ? match[1] : null;
+  })();
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
@@ -56,8 +61,36 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
 
-  // 1. Fetch Projects on initial load
+  // 1. Fetch Projects on initial load (only when NOT in embedded/iframe mode)
   useEffect(() => {
+    if (urlProjectId) {
+      // Embedded mode: fetch runs directly for the given project ID
+      fetch(`/api/projects/${urlProjectId}/test-runs`)
+        .then(async (res) => {
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || 'Error fetching test runs');
+          }
+          return res.json();
+        })
+        .then((data) => {
+          setTestRuns(data);
+          // Set a minimal synthetic project so the dashboard header renders
+          setSelectedProject({
+            projectid: urlProjectId,
+            projectname: '',
+            repo: '',
+            created_at: '',
+          });
+          setLoading(false);
+        })
+        .catch(() => {
+          setError('Failed to fetch coverage data for this project.');
+          setLoading(false);
+        });
+      return;
+    }
+
     fetch('/api/projects')
       .then((res) => res.json())
       .then((data) => {
@@ -68,7 +101,7 @@ export default function App() {
         setError('Failed to fetch projects. Is the API running?');
         setLoading(false);
       });
-  }, []);
+  }, [urlProjectId]);
 
   const handleSelectProject = (project: Project) => {
     setSelectedProject(project);
@@ -116,8 +149,28 @@ export default function App() {
     );
   }
 
-  // View 1: Project List
+  // View 1: Project List (hidden in iframe/embedded mode)
   if (!selectedProject) {
+    // In embedded mode just show a loader/error — never show the project grid
+    if (urlProjectId) {
+      return (
+        <div className="app-container">
+          {error ? (
+            <div
+              style={{
+                padding: '3rem',
+                textAlign: 'center',
+                color: 'var(--danger)',
+              }}
+            >
+              {error}
+            </div>
+          ) : (
+            <div className="loader" />
+          )}
+        </div>
+      );
+    }
     return (
       <div className="app-container">
         <header className="header">
@@ -205,21 +258,24 @@ export default function App() {
     <div className="app-container">
       <header className="header">
         <div>
-          <button
-            onClick={goBack}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              marginBottom: '1rem',
-            }}
-          >
-            <ArrowLeft size={16} /> Back
-          </button>
+          {/* Back button only shown in standalone (non-iframe) mode */}
+          {!urlProjectId && (
+            <button
+              onClick={goBack}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '1rem',
+              }}
+            >
+              ← Back
+            </button>
+          )}
           <h1 className="header-title">{selectedProject.projectname}</h1>
           <p
             style={{
