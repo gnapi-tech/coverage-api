@@ -221,9 +221,12 @@ export const CoverageTab: React.FC<CoverageTabProps> = ({
           <h3 style={{ marginBottom: '1rem', color: '#45474C' }}>
             Coverage Trend
           </h3>
-          <div style={{ height: 220 }}>
+          <div style={{ height: 250 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
+              <LineChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+              >
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="var(--border-glass)"
@@ -232,11 +235,23 @@ export const CoverageTab: React.FC<CoverageTabProps> = ({
                   dataKey="name"
                   stroke="var(--text-secondary)"
                   tick={{ fontSize: 12 }}
+                  tickMargin={8}
+                  label={{
+                    value: 'Commit',
+                    position: 'bottom',
+                    offset: 0,
+                  }}
                 />
                 <YAxis
                   domain={[0, 100]}
                   stroke="var(--text-secondary)"
                   tick={{ fontSize: 12 }}
+                  label={{
+                    value: 'Coverage %',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { textAnchor: 'middle' },
+                  }}
                 />
                 <Tooltip
                   contentStyle={{
@@ -259,9 +274,12 @@ export const CoverageTab: React.FC<CoverageTabProps> = ({
           <h3 style={{ marginBottom: '1rem', color: '#45474C' }}>
             Test Results
           </h3>
-          <div style={{ height: 220 }}>
+          <div style={{ height: 250 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
+              <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+              >
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="var(--border-glass)"
@@ -270,15 +288,30 @@ export const CoverageTab: React.FC<CoverageTabProps> = ({
                   dataKey="name"
                   stroke="var(--text-secondary)"
                   tick={{ fontSize: 12 }}
+                  tickMargin={8}
+                  label={{
+                    value: 'Commit',
+                    position: 'bottom',
+                    offset: 0,
+                  }}
                 />
-                <YAxis stroke="var(--text-secondary)" tick={{ fontSize: 12 }} />
+                <YAxis
+                  stroke="var(--text-secondary)"
+                  tick={{ fontSize: 12 }}
+                  label={{
+                    value: 'Test Cases',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { textAnchor: 'middle' },
+                  }}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: 'var(--bg-secondary)',
                     border: '1px solid var(--border-glass)',
                   }}
                 />
-                <Legend />
+                <Legend verticalAlign="top" height={36} />
                 <Bar dataKey="passed" stackId="a" fill="#13C31C" />
                 <Bar dataKey="failed" stackId="a" fill="#EF4545" />
                 <Bar dataKey="skipped" stackId="a" fill="#FF9800" />
@@ -446,13 +479,8 @@ export const CoverageTab: React.FC<CoverageTabProps> = ({
             >
               Previous
             </button>
-            <span
-              style={{ color: '#45474C', fontSize: '0.875rem' }}
-            >
-              Page{' '}
-              <strong style={{ color: '#45474C' }}>
-                {currentPage}
-              </strong>{' '}
+            <span style={{ color: '#45474C', fontSize: '0.875rem' }}>
+              Page <strong style={{ color: '#45474C' }}>{currentPage}</strong>{' '}
               of {totalPages}
             </span>
             <button
