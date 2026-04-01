@@ -1,0 +1,61 @@
+---
+#-------------------------------------------------------------------------------#
+#            Discover all capabilities of Qodana in our documentation           #
+#             https://www.jetbrains.com/help/qodana/about-qodana.html           #
+#-------------------------------------------------------------------------------#
+
+name: Qodana
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  qodana:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Authenticate with GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.PACKAGES_PAT }}" > ~/.npmrc
+          echo "@gnapi-tech:registry=https://npm.pkg.github.com" >> ~/.npmrc
+
+      - name: Install dependencies
+        run: |
+          rm -rf node_modules && npm ci --legacy-peer-deps
+          cd coverage-dashboard && rm -rf node_modules && npm ci --legacy-peer-deps
+
+      - name: Cleanup existing Qodana containers
+        run: |
+          docker ps -aq --filter "name=qodana" | xargs -r docker rm -f
+
+      - name: Qodana Scan
+        uses: JetBrains/qodana-action@v2025.1
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        with:
+          pr-mode: false
+          use-caches: false
+          post-pr-comment: true
+          use-annotations: true
+          upload-result: false
+          push-fixes: "none"

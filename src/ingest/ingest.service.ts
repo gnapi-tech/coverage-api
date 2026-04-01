@@ -24,6 +24,29 @@ interface JUnitTestCase {
   failure_message?: string;
 }
 
+interface XmlAttribute {
+  name?: string;
+  time?: string;
+}
+
+interface XmlTestCase {
+  $?: XmlAttribute;
+  failure?: Array<{ _?: string; $?: Record<string, unknown> } | string>;
+  skipped?: Array<unknown>;
+}
+
+interface XmlTestSuite {
+  $?: XmlAttribute;
+  testcase?: XmlTestCase[];
+}
+
+interface ParsedJunit {
+  testsuites?: {
+    testsuite?: XmlTestSuite[];
+  };
+  testsuite?: XmlTestSuite[];
+}
+
 interface IngestFilesOptions {
   projectId: string;
   repo: string;
@@ -66,11 +89,11 @@ export class IngestService {
    */
   private async parseJunit(buffer: Buffer): Promise<JUnitTestCase[]> {
     const xmlStr = buffer.toString('utf-8');
-    let parsed: any;
+    let parsed: ParsedJunit;
     try {
-      parsed = await xml2js.parseStringPromise(xmlStr, {
+      parsed = (await xml2js.parseStringPromise(xmlStr, {
         explicitArray: true,
-      });
+      })) as ParsedJunit;
     } catch {
       throw new BadRequestException('Invalid JUnit XML format');
     }
@@ -78,24 +101,36 @@ export class IngestService {
     const testCases: JUnitTestCase[] = [];
 
     // JUnit format: <testsuites><testsuite name="..."><testcase ...>
-    const suites = parsed?.testsuites?.testsuite ?? parsed?.testsuite ?? [];
+    const suites: XmlTestSuite[] =
+      parsed?.testsuites?.testsuite ?? parsed?.testsuite ?? [];
 
     for (const suite of suites) {
-      const suiteName: string = suite?.$.name ?? 'Unknown Suite';
-      const cases = suite?.testcase ?? [];
+      const suiteName: string = suite?.$?.name ?? 'Unknown Suite';
+      const cases: XmlTestCase[] = suite?.testcase ?? [];
 
       for (const tc of cases) {
-        const name: string = tc?.$.name ?? 'Unknown Test';
-        const timeStr: string = tc?.$.time ?? '0';
+        const name: string = tc?.$?.name ?? 'Unknown Test';
+        const timeStr: string = tc?.$?.time ?? '0';
         const duration = parseFloat(timeStr);
 
         let status: 'passed' | 'failed' | 'skipped' = 'passed';
         let failure_message: string | undefined;
 
-        if (tc?.failure) {
+        if (tc?.failure && tc.failure.length > 0) {
           status = 'failed';
-          failure_message = tc.failure[0]?._ ?? tc.failure[0] ?? 'Test failed';
-        } else if (tc?.skipped) {
+          const failObj = tc.failure[0];
+          if (
+            typeof failObj === 'object' &&
+            failObj !== null &&
+            '_' in failObj
+          ) {
+            failure_message = (failObj._ as string) ?? 'Test failed';
+          } else if (typeof failObj === 'string') {
+            failure_message = failObj;
+          } else {
+            failure_message = 'Test failed';
+          }
+        } else if (tc?.skipped && tc.skipped.length > 0) {
           status = 'skipped';
         }
 
@@ -194,7 +229,8 @@ export class IngestService {
 
     return this.knex.transaction(async (trx) => {
       // 1. Insert test run
-      const [testRun] = await trx('code_coverage.unit_test_run')
+      type RunRow = { id: string };
+      const testRuns = (await trx('code_coverage.unit_test_run')
         .insert({
           project_id: projectId,
           repo: repo,
@@ -209,7 +245,12 @@ export class IngestService {
           coverage_percent: coveragePercent,
           status: 'completed',
         })
-        .returning('*');
+        .returning('*')) as RunRow[];
+
+      const testRun = testRuns[0];
+      if (!testRun) {
+        throw new BadRequestException('Failed to create test run record');
+      }
 
       // 2. Insert test cases
       if (testCases.length > 0) {
@@ -242,7 +283,7 @@ export class IngestService {
       );
 
       return {
-        runId: testRun.id as string,
+        runId: testRun.id,
         testCasesInserted: testCases.length,
         coverageFilesInserted: coverageFiles.length,
       };
