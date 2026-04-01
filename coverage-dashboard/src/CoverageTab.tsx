@@ -32,9 +32,7 @@ interface TestRun {
 }
 
 interface CoverageTabProps {
-  /** The Coverage API project ID (UUID) */
   projectId: string;
-  /** Base URL of the coverage API e.g. "/api" or "http://localhost:3500" */
   apiBaseUrl?: string;
 }
 
