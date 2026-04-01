@@ -50,7 +50,7 @@ jobs:
           secrets: |
             github_token=${{ secrets.PACKAGES_READ }}
           build-args: |
-            APP_VERSION=${{ steps.version.outputs.version }} 
+            APP_VERSION=${{ steps.version.outputs.version }}
           tags: |
             ghcr.io/${{ github.repository }}/backend:${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository }}/backend:latest
@@ -84,3 +84,17 @@ jobs:
             git push origin "${{ steps.version.outputs.version_tag }}"
             echo "Created and pushed tag ${{ steps.version.outputs.version_tag }}"
           fi
+
+      - name: Create GitHub release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version_tag }}
+          release_name: Release ${{ steps.version.outputs.version_tag }}
+          body: |
+            ## Changelog
+            ${{ steps.version.outputs.changelog }}
+          draft: false
+          prerelease: false
