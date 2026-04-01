@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+      - docker-image
+  workflow_dispatch: {}
 
 permissions:
   contents: write
