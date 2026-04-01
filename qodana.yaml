@@ -1,0 +1,21 @@
+version: "1.0"
+linter: jetbrains/qodana-js:2025.1
+
+profile:
+  name: qodana.recommended
+
+exclude:
+  - name: All
+    paths:
+      - "node_modules"
+      - "dist"
+      - "build"
+      - "coverage-dashboard/node_modules"
+      - "coverage-dashboard/dist"
+      - "coverage"
+      - "**/*.spec.ts"
+      - "**/*.spec.tsx"
+      - "**/*.test.ts"
+      - "**/*.test.tsx"
+
+bootstrap: npm install --prefer-offline --no-audit
