@@ -7,7 +7,10 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN --mount=type=secret,id=github_token \
+    npm config set @gnapi-tech:registry https://npm.pkg.github.com/ \
+    && npm config set //npm.pkg.github.com/:_authToken "$(cat /run/secrets/github_token)" \
+    && npm ci
 
 # Copy the rest of the frontend source code
 COPY . .
